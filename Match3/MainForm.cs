@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using SharpDX.Mathematics.Interop;
 using Windows.Media.Audio;
 using Windows.Media.Core;
 using Windows.Media.Render;
+using Windows.Storage.Streams;
 using Color = SharpDX.Color;
 
 namespace Match3
@@ -96,9 +98,17 @@ namespace Match3
             PlayMusicLoop("music.mp3", 0.4, mMusicControl.Token);
         }
 
-        internal static Stream LoadStream(string filename)
+        internal static byte[] LoadFile(string filename)
         {
-            return typeof(MainForm).Assembly.GetManifestResourceStream(typeof(MainForm), "Resources." + filename) ?? throw new FileNotFoundException();
+            using (var stream = typeof(MainForm).Assembly.GetManifestResourceStream(typeof(MainForm), "Resources." + filename))
+            {
+                if (stream is null)
+                    throw new FileNotFoundException();
+
+                var buffer = new byte[stream.Length];
+                stream.Read(buffer, 0, buffer.Length);
+                return buffer;
+            }
         }
 
         #region Audio
@@ -116,7 +126,7 @@ namespace Match3
 
         private async void PlayMusicLoop(string filename, double gain = 1, CancellationToken ct = default)
         {
-            var source = MediaSource.CreateFromStream(LoadStream(filename).AsRandomAccessStream(), "");
+            var source = MediaSource.CreateFromStream(await LoadFile(filename).AsRandomAccessStream(), "");
             var result = await mAudioGraph.CreateMediaSourceAudioInputNodeAsync(source);
             if (result.Status != MediaSourceAudioInputNodeCreationStatus.Success) return;
             var node = result.Node;
@@ -132,7 +142,7 @@ namespace Match3
 
         private async void PlaySoundEffect(string filename, double gain = 1)
         {
-            var source = MediaSource.CreateFromStream(LoadStream(filename).AsRandomAccessStream(), "");
+            var source = MediaSource.CreateFromStream(await LoadFile(filename).AsRandomAccessStream(), "");
             var result = await mAudioGraph.CreateMediaSourceAudioInputNodeAsync(source);
             if (result.Status != MediaSourceAudioInputNodeCreationStatus.Success) return;
             var fileNode = result.Node;
@@ -300,8 +310,7 @@ namespace Match3
 
         private ShaderResourceView LoadTexture(string filename)
         {
-            using (var stream = MainForm.LoadStream(filename))
-            using (var bitmap = new Bitmap(stream))
+            using (var bitmap = new Bitmap(new MemoryStream(MainForm.LoadFile(filename))))
                 return LoadTexture(bitmap);
         }
 
@@ -497,6 +506,13 @@ float4 PS(PS_DATA input) : SV_TARGET
         {
             field?.Dispose();
             field = default;
+        }
+
+        public static async Task<IRandomAccessStream> AsRandomAccessStream(this byte[] buffer)
+        {
+            var result = new InMemoryRandomAccessStream();
+            await result.WriteAsync(buffer.AsBuffer());
+            return result;
         }
     }
 }
