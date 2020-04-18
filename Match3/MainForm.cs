@@ -352,8 +352,18 @@ namespace Match3
             if (Game != null)
             {
                 for (int iy = 0; iy < Game.Height; iy++)
+                {
                     for (int ix = 0; ix < Game.Width; ix++)
-                        WriteQuad(ref i, ref j, ix * kSpriteSize + 10, iy * kSpriteSize + 30, kSpriteSize, kSpriteSize, 0, 0, 16, 16);
+                    {
+                        switch (Game[ix, iy].Value)
+                        {
+                            case 1: WriteQuad(ref i, ref j, ix * (kSpriteSize + 2) + 10, iy * (kSpriteSize + 2) + 30, kSpriteSize, kSpriteSize, 0, 0, 16, 16); break;
+                            case 2: WriteQuad(ref i, ref j, ix * (kSpriteSize + 2) + 10, iy * (kSpriteSize + 2) + 30, kSpriteSize, kSpriteSize, 16, 0, 16, 16); break;
+                            case 3: WriteQuad(ref i, ref j, ix * (kSpriteSize + 2) + 10, iy * (kSpriteSize + 2) + 30, kSpriteSize, kSpriteSize, 0, 16, 16, 16); break;
+                            case 4: WriteQuad(ref i, ref j, ix * (kSpriteSize + 2) + 10, iy * (kSpriteSize + 2) + 30, kSpriteSize, kSpriteSize, 16, 16, 16, 16); break;
+                        }
+                    }
+                }
             }
 
             mRenderContext.OutputMerger.SetRenderTargets(mRenderTarget);

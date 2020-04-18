@@ -39,7 +39,7 @@ namespace Match3
 
             for (int iy = 0; iy < mHeight; iy++)
                 for (int ix = 0; ix < mWidth; ix++)
-                    this[ix, iy].Value = rng.Next(5);
+                    this[ix, iy].Value = rng.Next(4) + 1;
         }
     }
 
