@@ -368,6 +368,8 @@ namespace Match3
 
             if (Game != null)
             {
+                bool showHighlight = (Game.HighlightCount >= 3);
+
                 for (int iy = 0; iy < Game.Height; iy++)
                 {
                     for (int ix = 0; ix < Game.Width; ix++)
@@ -377,7 +379,7 @@ namespace Match3
                         if (value == 0)
                             continue;
 
-                        WriteQuad(ref i, ref j, ix * (kSpriteSize + kMargin) + kOffsetX, iy * (kSpriteSize + kMargin) + kOffsetY, kSpriteSize, kSpriteSize, (value - 1) * 16, 0, 16, 16, cell.Highlight ? new Color(1.0f, 1.0f, 1.0f, 0.7f) : Color.Transparent);
+                        WriteQuad(ref i, ref j, ix * (kSpriteSize + kMargin) + kOffsetX, iy * (kSpriteSize + kMargin) + kOffsetY, kSpriteSize, kSpriteSize, (value - 1) * 16, 0, 16, 16, showHighlight && cell.Highlight ? new Color(1.0f, 1.0f, 1.0f, 0.7f) : Color.Transparent);
                     }
                 }
             }

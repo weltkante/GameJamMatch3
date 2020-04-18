@@ -12,7 +12,7 @@ namespace Match3
         private GameCell[] mCells;
         private int mWidth;
         private int mHeight;
-        private bool mHasHighlight;
+        private int mHighlightCount;
 
         public GameState(int width, int height)
         {
@@ -23,6 +23,7 @@ namespace Match3
 
         public int Width => mWidth;
         public int Height => mHeight;
+        public int HighlightCount => mHighlightCount;
 
         public ref GameCell this[int x, int y]
         {
@@ -45,9 +46,9 @@ namespace Match3
 
         public void ClearHighlight()
         {
-            if (mHasHighlight)
+            if (mHighlightCount > 0)
             {
-                mHasHighlight = false;
+                mHighlightCount = 0;
 
                 for (int iy = 0; iy < mHeight; iy++)
                     for (int ix = 0; ix < mWidth; ix++)
@@ -63,12 +64,13 @@ namespace Match3
                 return;
             }
 
+            if (this[x, y].IsEmpty)
+                return; // nothing to highlight
+
             if (this[x, y].Highlight)
                 return; // same highlight, nothing to do
 
             ClearHighlight();
-
-            mHasHighlight = true;
 
             var value = this[x, y].Value;
             var visited = new HashSet<(int, int)>(mWidth * mHeight);
@@ -81,6 +83,7 @@ namespace Match3
             {
                 (x, y) = pending.Pop();
                 this[x, y].Highlight = true;
+                mHighlightCount++;
                 Expand(x, y);
             }
 
