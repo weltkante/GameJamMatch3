@@ -129,12 +129,21 @@ namespace Match3
 
     public class DisplayControl : Control
     {
+        private const float kPointToPixel = 96.0f / 72.0f;
+
         private SharpDX.DXGI.Factory5 mGraphicsFactory;
         private SharpDX.DXGI.SwapChain4 mGraphicsDisplay;
 
         private Device5 mRenderDevice;
         private DeviceContext4 mRenderContext;
         private RenderTargetView1 mRenderTarget;
+
+        private SharpDX.Direct2D1.Factory6 mDrawingFactory;
+        private SharpDX.Direct2D1.DeviceContext5 mDrawingContext;
+        private SharpDX.Direct2D1.SolidColorBrush mDrawingBrush;
+
+        private SharpDX.DirectWrite.Factory5 mTextFactory;
+        private SharpDX.DirectWrite.TextFormat2 mTextFormat;
 
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -161,6 +170,21 @@ namespace Match3
                 mRenderTarget = new RenderTargetView1(mRenderDevice, target);
 
             mRenderContext = mRenderDevice.ImmediateContext.QueryInterface<DeviceContext4>();
+
+            using (var factory = new SharpDX.Direct2D1.Factory2(SharpDX.Direct2D1.FactoryType.SingleThreaded, Debugger.IsAttached ? SharpDX.Direct2D1.DebugLevel.Warning : SharpDX.Direct2D1.DebugLevel.None))
+                mDrawingFactory = factory.QueryInterface<SharpDX.Direct2D1.Factory6>();
+
+            var drawingDesc = new SharpDX.Direct2D1.RenderTargetProperties(new SharpDX.Direct2D1.PixelFormat(SharpDX.DXGI.Format.Unknown, SharpDX.Direct2D1.AlphaMode.Premultiplied));
+            using (var context = new SharpDX.Direct2D1.RenderTarget(mDrawingFactory, mGraphicsDisplay.GetBackBuffer<SharpDX.DXGI.Surface>(0), drawingDesc))
+                mDrawingContext = context.QueryInterface<SharpDX.Direct2D1.DeviceContext5>();
+
+            mDrawingBrush = new SharpDX.Direct2D1.SolidColorBrush(mDrawingContext, Color.Black);
+
+            using (var factory = new SharpDX.DirectWrite.Factory1(SharpDX.DirectWrite.FactoryType.Shared))
+                mTextFactory = factory.QueryInterface<SharpDX.DirectWrite.Factory5>();
+
+            using (var format = new SharpDX.DirectWrite.TextFormat(mTextFactory, "Segoe UI", 12.0f * kPointToPixel))
+                mTextFormat = format.QueryInterface<SharpDX.DirectWrite.TextFormat2>();
         }
 
         protected override void OnHandleDestroyed(EventArgs e)
@@ -180,6 +204,11 @@ namespace Match3
 
             mRenderContext.OutputMerger.SetRenderTargets(mRenderTarget);
             mRenderContext.ClearRenderTargetView(mRenderTarget, Color.CornflowerBlue);
+
+            mDrawingContext.BeginDraw();
+            mDrawingBrush.Color = Color.Black;
+            mDrawingContext.DrawText($"Hello World {DateTime.Now}", mTextFormat, new SharpDX.Mathematics.Interop.RawRectangleF(0, 0, float.PositiveInfinity, float.PositiveInfinity), mDrawingBrush);
+            mDrawingContext.EndDraw();
 
             mGraphicsDisplay.Present(0, SharpDX.DXGI.PresentFlags.None);
         }
