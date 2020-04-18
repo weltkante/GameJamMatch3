@@ -158,6 +158,7 @@ namespace Match3
 
         private SharpDX.DirectWrite.Factory5 mTextFactory;
         private SharpDX.DirectWrite.TextFormat2 mTextFormat;
+
         private SharpDX.Direct3D11.Buffer mConstantBuffer;
         private SharpDX.Direct3D11.Buffer mVertexBuffer;
         private SharpDX.Direct3D11.Buffer mIndexBuffer;
@@ -234,6 +235,16 @@ namespace Match3
 
         protected override void OnHandleDestroyed(EventArgs e)
         {
+            Utils.Dispose(ref mDrawingBrush);
+            Utils.Dispose(ref mDrawingContext);
+            Utils.Dispose(ref mDrawingFactory);
+
+            Utils.Dispose(ref mTextFormat);
+            Utils.Dispose(ref mTextFactory);
+
+            Utils.Dispose(ref mConstantBuffer);
+            Utils.Dispose(ref mVertexBuffer);
+            Utils.Dispose(ref mIndexBuffer);
             Utils.Dispose(ref mRenderTarget);
             Utils.Dispose(ref mRenderContext);
             Utils.Dispose(ref mGraphicsDisplay);
