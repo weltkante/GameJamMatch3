@@ -70,15 +70,6 @@ namespace Match3
                         PlaySoundEffect("reject.wav", 0.5);
                 }
             }
-
-            // DEBUG
-            if (e.Button == MouseButtons.Right && !display.Game.IsInAnimation && !display.Game.IsGameOver)
-            {
-                if (display.FillBlocks(8))
-                    PlaySoundEffect("sound.wav", 0.5);
-                else
-                    PlaySoundEffect("reject.wav", 0.5);
-            }
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)
@@ -493,16 +484,9 @@ namespace Match3
             if (!Game.ResolveBlocks())
                 return false;
 
-            mAnimationStart = DateTime.UtcNow;
-            return true;
-        }
+            if (Game.IsInAnimation)
+                mAnimationStart = DateTime.UtcNow;
 
-        public bool FillBlocks(int count)
-        {
-            if (!Game.FillBlocks(count))
-                return false;
-
-            mAnimationStart = DateTime.UtcNow;
             return true;
         }
     }

@@ -21,6 +21,7 @@ namespace Match3
         private int mHeight;
         private int mHighlightCount;
         private int mScore;
+        private int mDropScore;
         private int mAnimationLength;
         private DateTime? mGameOver;
 
@@ -56,6 +57,7 @@ namespace Match3
         public void StartGame(int seed)
         {
             mScore = 0;
+            mDropScore = 0;
             mStartTime = DateTime.UtcNow;
             mAnimationLength = 0;
             mGameOver = null;
@@ -141,9 +143,9 @@ namespace Match3
             }
         }
 
-        public bool FillBlocks(int count)
+        public bool FillBlocks(ref int count)
         {
-            if (IsInAnimation || IsGameOver)
+            if (IsGameOver)
                 return false;
 
             var rng = new Random();
@@ -162,7 +164,7 @@ namespace Match3
                     while (iy + 1 < mHeight && this[ix, iy + 1].IsEmpty)
                         iy++;
 
-                    maxHeight[ix] = Math.Max(maxHeight[ix], iy);
+                    maxHeight[ix] = Math.Max(maxHeight[ix], iy + 1);
                     this[ix, iy] = new GameCell((byte)(rng.Next(4) + 1));
                     this[ix, iy].DropCount = (byte)maxHeight[ix];
                     mAnimationLength = Math.Max(mAnimationLength, maxHeight[ix]);
@@ -227,6 +229,20 @@ namespace Match3
                         mAnimationLength = Math.Max(mAnimationLength, dropCount);
                     }
                 }
+            }
+
+            const int kDropGate = 500;
+            const int kDropCost = 50;
+
+            while (mScore - mDropScore >= kDropGate)
+            {
+                int count, count0;
+                count = count0 = kDropGate / kDropCost;
+
+                if (!FillBlocks(ref count))
+                    break;
+
+                mDropScore += (count0 - count) * kDropCost;
             }
 
             if (CheckGameOver())
