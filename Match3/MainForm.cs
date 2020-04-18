@@ -58,14 +58,17 @@ namespace Match3
 
         private void display_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left && !display.Game.IsInAnimation)
+            if (e.Button == MouseButtons.Left && !display.Game.IsInAnimation && !display.Game.IsGameOver)
             {
                 var (x, y) = display.MouseToGrid(e.X, e.Y);
-                ref var cell = ref display.Game[x, y];
-                if (!cell.IsEmpty && display.Game.HighlightCount >= 3 && display.ResolveBlocks())
-                    PlaySoundEffect("sound.wav", 0.5);
-                else
-                    PlaySoundEffect("reject.wav", 0.5);
+                if (display.Game.IsValid(x, y))
+                {
+                    ref var cell = ref display.Game[x, y];
+                    if (!cell.IsEmpty && display.Game.HighlightCount >= 3 && display.ResolveBlocks())
+                        PlaySoundEffect("sound.wav", 0.5);
+                    else
+                        PlaySoundEffect("reject.wav", 0.5);
+                }
             }
         }
 
@@ -193,6 +196,7 @@ namespace Match3
 
         private SharpDX.DirectWrite.Factory5 mTextFactory;
         private SharpDX.DirectWrite.TextFormat2 mTextFormat;
+        private SharpDX.DirectWrite.TextFormat2 mTextFormat2;
 
         private SharpDX.Direct3D11.Buffer mConstantBuffer;
         private SharpDX.Direct3D11.Buffer mVertexBuffer;
@@ -245,6 +249,13 @@ namespace Match3
             using (var format = new SharpDX.DirectWrite.TextFormat(mTextFactory, "Segoe UI", 12.0f * kPointToPixel))
                 mTextFormat = format.QueryInterface<SharpDX.DirectWrite.TextFormat2>();
 
+            using (var format = new SharpDX.DirectWrite.TextFormat(mTextFactory, "Segoe UI", 36.0f * kPointToPixel))
+            {
+                mTextFormat2 = format.QueryInterface<SharpDX.DirectWrite.TextFormat2>();
+                mTextFormat2.TextAlignment = SharpDX.DirectWrite.TextAlignment.Center;
+                mTextFormat2.ParagraphAlignment = SharpDX.DirectWrite.ParagraphAlignment.Center;
+            }
+
             mVertexBufferArray = new Vertex[1 << 20];
             mIndexBufferArray = new int[1 << 20];
 
@@ -291,6 +302,7 @@ namespace Match3
             Utils.Dispose(ref mDrawingFactory);
 
             Utils.Dispose(ref mTextFormat);
+            Utils.Dispose(ref mTextFormat2);
             Utils.Dispose(ref mTextFactory);
 
             Utils.Dispose(ref mConstantBuffer);
@@ -397,7 +409,7 @@ namespace Match3
                     }
                 }
 
-                bool showHighlight = (Game.HighlightCount >= 3) && !Game.IsInAnimation;
+                bool showHighlight = (Game.HighlightCount >= 3) && !Game.IsInAnimation && !Game.IsGameOver;
 
                 for (int iy = 0; iy < Game.Height; iy++)
                 {
@@ -437,6 +449,31 @@ namespace Match3
             mDrawingContext.DrawText($"Time: {time}\t\tScore: {Game.Score}", mTextFormat, new RawRectangleF(6, 3, float.PositiveInfinity, float.PositiveInfinity), mDrawingBrush);
             mDrawingBrush.Color = Color.White;
             mDrawingContext.DrawText($"Time: {time}\t\tScore: {Game.Score}", mTextFormat, new RawRectangleF(5, 2, float.PositiveInfinity, float.PositiveInfinity), mDrawingBrush);
+
+            if (Game != null && !Game.IsInAnimation && Game.IsGameOver)
+            {
+                RawColor4 bg = Color.IndianRed;
+                bg.A = 0.9f;
+                mDrawingBrush.Color = bg;
+                const int fw = 300;
+                const int fh = 100;
+                int x0 = (ClientSize.Width - fw) / 2;
+                int y0 = (ClientSize.Height - fh - kOffsetY) / 2 + kOffsetY;
+                var frame = new SharpDX.Direct2D1.RoundedRectangle();
+                frame.Rect = new RawRectangleF(x0, y0, x0 + fw, y0 + fh);
+                frame.RadiusX = 8;
+                frame.RadiusY = 8;
+                mDrawingContext.FillRoundedRectangle(ref frame, mDrawingBrush);
+                mDrawingBrush.Color = Color.Black;
+                mDrawingContext.DrawText("Game Over", mTextFormat2, frame.Rect, mDrawingBrush);
+                mDrawingBrush.Color = Color.White;
+                frame.Rect.Left -= 2;
+                frame.Rect.Top -= 2;
+                frame.Rect.Right -= 2;
+                frame.Rect.Bottom -= 2;
+                mDrawingContext.DrawText("Game Over", mTextFormat2, frame.Rect, mDrawingBrush);
+            }
+
             mDrawingContext.EndDraw();
 
             mGraphicsDisplay.Present(0, SharpDX.DXGI.PresentFlags.None);

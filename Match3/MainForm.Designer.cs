@@ -38,6 +38,7 @@
             // renderTimer
             // 
             this.renderTimer.Enabled = true;
+            this.renderTimer.Interval = 25;
             this.renderTimer.Tick += new System.EventHandler(this.renderTimer_Tick);
             // 
             // btnNewGame
