@@ -305,25 +305,32 @@ namespace Match3
             }
         }
 
+        private void WriteQuad(ref int i, ref int j, int x, int y, int w, int h, int sx, int sy, int sw, int sh)
+        {
+            mIndexBufferArray[i++] = j + 0;
+            mIndexBufferArray[i++] = j + 1;
+            mIndexBufferArray[i++] = j + 2;
+            mIndexBufferArray[i++] = j + 2;
+            mIndexBufferArray[i++] = j + 1;
+            mIndexBufferArray[i++] = j + 3;
+
+            mVertexBufferArray[j++] = new Vertex(new Vector4(x, y, 0, 1), new Vector2(sx / 512.0f, sy / 512.0f), Color.White);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(x + w, y, 0, 1), new Vector2((sx + sw) / 512.0f, sy / 512.0f), Color.White);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(x, y + h, 0, 1), new Vector2(sx / 512.0f, (sy + sh) / 512.0f), Color.White);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(x + w, y + h, 0, 1), new Vector2((sx + sw) / 512.0f, (sy + sh) / 512.0f), Color.White);
+        }
+
         public void Render()
         {
             if (mRenderContext is null) return;
 
             var matrix = Matrix.OrthoOffCenterLH(0, ClientSize.Width, ClientSize.Height, 0, -1, +1);
 
-            int j = 0;
-            mVertexBufferArray[j++] = new Vertex(new Vector4(100, 100, 0, 1), new Vector2(0, 0), Color.White);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(200, 100, 0, 1), new Vector2(16.0f / 512.0f, 0), Color.White);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(100, 200, 0, 1), new Vector2(0, 16.0f / 512.0f), Color.White);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(200, 200, 0, 1), new Vector2(16.0f / 512.0f, 16.0f / 512.0f), Color.White);
+            int i = 0, j = 0;
 
-            int i = 0;
-            mIndexBufferArray[i++] = 0;
-            mIndexBufferArray[i++] = 1;
-            mIndexBufferArray[i++] = 2;
-            mIndexBufferArray[i++] = 2;
-            mIndexBufferArray[i++] = 1;
-            mIndexBufferArray[i++] = 3;
+            WriteQuad(ref i, ref j, 100, 100, 40, 40, 0, 0, 16, 16);
+            WriteQuad(ref i, ref j, 140, 100, 40, 40, 0, 0, 16, 16);
+            WriteQuad(ref i, ref j, 180, 100, 40, 40, 0, 0, 16, 16);
 
             mRenderContext.OutputMerger.SetRenderTargets(mRenderTarget);
             mRenderContext.ClearRenderTargetView(mRenderTarget, Color.CornflowerBlue);
