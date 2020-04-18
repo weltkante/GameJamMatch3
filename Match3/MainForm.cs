@@ -6,12 +6,14 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SharpDX;
 using SharpDX.Direct3D11;
+using SharpDX.Mathematics.Interop;
 using Windows.Media.Audio;
 using Windows.Media.Core;
 using Windows.Media.Render;
@@ -127,6 +129,18 @@ namespace Match3
         #endregion
     }
 
+    public struct Vertex
+    {
+        public RawVector4 Position;
+        public RawColorBGRA Color;
+
+        public Vertex(RawVector4 position, RawColorBGRA color)
+        {
+            Position = position;
+            Color = color;
+        }
+    }
+
     public class DisplayControl : Control
     {
         private const float kPointToPixel = 96.0f / 72.0f;
@@ -144,6 +158,12 @@ namespace Match3
 
         private SharpDX.DirectWrite.Factory5 mTextFactory;
         private SharpDX.DirectWrite.TextFormat2 mTextFormat;
+        private SharpDX.Direct3D11.Buffer mConstantBuffer;
+        private SharpDX.Direct3D11.Buffer mVertexBuffer;
+        private SharpDX.Direct3D11.Buffer mIndexBuffer;
+
+        private Vertex[] mVertexBufferArray;
+        private int[] mIndexBufferArray;
 
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -185,6 +205,31 @@ namespace Match3
 
             using (var format = new SharpDX.DirectWrite.TextFormat(mTextFactory, "Segoe UI", 12.0f * kPointToPixel))
                 mTextFormat = format.QueryInterface<SharpDX.DirectWrite.TextFormat2>();
+
+            mVertexBufferArray = new Vertex[1 << 20];
+            mIndexBufferArray = new int[1 << 20];
+
+            mConstantBuffer = new SharpDX.Direct3D11.Buffer(mRenderDevice, new BufferDescription(4 * 4 * sizeof(float), BindFlags.ConstantBuffer, ResourceUsage.Default));
+            mVertexBuffer = SharpDX.Direct3D11.Buffer.Create(mRenderDevice, BindFlags.VertexBuffer, mVertexBufferArray);
+            mIndexBuffer = SharpDX.Direct3D11.Buffer.Create(mRenderDevice, BindFlags.IndexBuffer, mIndexBufferArray);
+
+            var vs = SharpDX.D3DCompiler.ShaderBytecode.Compile(ShaderText.kVertexShader, "VS", "vs_4_0");
+            mRenderContext.VertexShader.Set(new VertexShader(mRenderDevice, vs));
+            mRenderContext.VertexShader.SetConstantBuffer(0, mConstantBuffer);
+
+            var ps = SharpDX.D3DCompiler.ShaderBytecode.Compile(ShaderText.kPixelShader, "PS", "ps_4_0");
+            mRenderContext.PixelShader.Set(new PixelShader(mRenderDevice, ps));
+
+            mRenderContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
+            mRenderContext.InputAssembler.SetIndexBuffer(mIndexBuffer, SharpDX.DXGI.Format.R32_UInt, 0);
+            mRenderContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(mVertexBuffer, Marshal.SizeOf<Vertex>(), 0));
+            mRenderContext.InputAssembler.InputLayout = new InputLayout(mRenderDevice, SharpDX.D3DCompiler.ShaderSignature.GetInputSignature(vs), new InputElement[]
+            {
+                new InputElement("position", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 0),
+                new InputElement("color", 0, SharpDX.DXGI.Format.B8G8R8A8_UNorm, 0),
+            });
+
+            mRenderContext.Rasterizer.SetViewport(0, 0, ClientSize.Width, ClientSize.Height);
         }
 
         protected override void OnHandleDestroyed(EventArgs e)
@@ -202,16 +247,84 @@ namespace Match3
         {
             if (mRenderContext is null) return;
 
+            var matrix = Matrix.OrthoOffCenterLH(0, ClientSize.Width, ClientSize.Height, 0, -1, +1);
+
+            int j = 0;
+            mVertexBufferArray[j++] = new Vertex(new Vector4(100, 100, 0, 1), Color.Red);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(200, 100, 0, 1), Color.Green);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(100, 200, 0, 1), Color.Blue);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(200, 200, 0, 1), Color.Yellow);
+
+            int i = 0;
+            mIndexBufferArray[i++] = 0;
+            mIndexBufferArray[i++] = 1;
+            mIndexBufferArray[i++] = 2;
+            mIndexBufferArray[i++] = 2;
+            mIndexBufferArray[i++] = 1;
+            mIndexBufferArray[i++] = 3;
+
             mRenderContext.OutputMerger.SetRenderTargets(mRenderTarget);
             mRenderContext.ClearRenderTargetView(mRenderTarget, Color.CornflowerBlue);
+            mRenderContext.UpdateSubresource(ref matrix, mConstantBuffer);
+            mRenderContext.UpdateSubresource(mVertexBufferArray, mVertexBuffer);
+            mRenderContext.UpdateSubresource(mIndexBufferArray, mIndexBuffer);
+            mRenderContext.DrawIndexed(i, 0, 0);
 
             mDrawingContext.BeginDraw();
             mDrawingBrush.Color = Color.Black;
-            mDrawingContext.DrawText($"Hello World {DateTime.Now}", mTextFormat, new SharpDX.Mathematics.Interop.RawRectangleF(0, 0, float.PositiveInfinity, float.PositiveInfinity), mDrawingBrush);
+            mDrawingContext.DrawText($"Hello World {DateTime.Now}", mTextFormat, new RawRectangleF(0, 0, float.PositiveInfinity, float.PositiveInfinity), mDrawingBrush);
             mDrawingContext.EndDraw();
 
             mGraphicsDisplay.Present(0, SharpDX.DXGI.PresentFlags.None);
         }
+    }
+
+    public static class ShaderText
+    {
+        private const string kVertexStructure = @"
+
+struct VS_DATA
+{
+    float4 position : POSITION;
+    float4 color : COLOR;
+};
+
+";
+
+        private const string kPixelStructure = @"
+
+struct PS_DATA
+{
+    float4 position : SV_POSITION;
+    float4 color : COLOR;
+};
+
+";
+
+        public const string kVertexShader = kVertexStructure + kPixelStructure + @"
+
+float4x4 camera;
+
+PS_DATA VS(VS_DATA input)
+{
+    PS_DATA output = (PS_DATA)0;
+
+    output.position = mul(camera, input.position);
+    output.color = input.color;
+
+    return output;
+};
+
+";
+
+        public const string kPixelShader = kPixelStructure + @"
+
+float4 PS(PS_DATA input) : SV_TARGET
+{
+    return input.color;
+}
+
+";
     }
 
     public static class Utils
