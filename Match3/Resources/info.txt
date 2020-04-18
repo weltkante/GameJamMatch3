@@ -5,3 +5,7 @@
 
 music.mp3
 - https://opengameart.org/content/crystal-cave-song18
+
+texture.png
+- combined from multiple sources, anything else is handdrawn
+- https://opengameart.org/content/nes-gems

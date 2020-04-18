@@ -132,11 +132,13 @@ namespace Match3
     public struct Vertex
     {
         public RawVector4 Position;
+        public RawVector2 TexturePosition;
         public RawColorBGRA Color;
 
-        public Vertex(RawVector4 position, RawColorBGRA color)
+        public Vertex(RawVector4 position, RawVector2 texpos, RawColorBGRA color)
         {
             Position = position;
+            TexturePosition = texpos;
             Color = color;
         }
     }
@@ -220,6 +222,8 @@ namespace Match3
 
             var ps = SharpDX.D3DCompiler.ShaderBytecode.Compile(ShaderText.kPixelShader, "PS", "ps_4_0");
             mRenderContext.PixelShader.Set(new PixelShader(mRenderDevice, ps));
+            mRenderContext.PixelShader.SetSampler(0, new SamplerState(mRenderDevice, SamplerStateDescription.Default()));
+            mRenderContext.PixelShader.SetShaderResource(0, LoadTexture("texture.png"));
 
             mRenderContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
             mRenderContext.InputAssembler.SetIndexBuffer(mIndexBuffer, SharpDX.DXGI.Format.R32_UInt, 0);
@@ -227,6 +231,7 @@ namespace Match3
             mRenderContext.InputAssembler.InputLayout = new InputLayout(mRenderDevice, SharpDX.D3DCompiler.ShaderSignature.GetInputSignature(vs), new InputElement[]
             {
                 new InputElement("position", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 0),
+                new InputElement("texcoord", 0, SharpDX.DXGI.Format.R32G32_Float, 0),
                 new InputElement("color", 0, SharpDX.DXGI.Format.B8G8R8A8_UNorm, 0),
             });
 
@@ -254,6 +259,52 @@ namespace Match3
             base.OnHandleDestroyed(e);
         }
 
+        private ShaderResourceView LoadTexture(string filename)
+        {
+            using (var stream = MainForm.LoadStream(filename))
+            using (var bitmap = new Bitmap(stream))
+                return LoadTexture(bitmap);
+        }
+
+        private ShaderResourceView LoadTexture(Bitmap bitmap)
+        {
+            var width = bitmap.Width;
+            var height = bitmap.Height;
+            var info = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, width, height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            try
+            {
+                var desc = new Texture2DDescription();
+                desc.Width = width;
+                desc.Height = height;
+                desc.MipLevels = 1;
+                desc.ArraySize = 1;
+                desc.Format = SharpDX.DXGI.Format.B8G8R8A8_UNorm;
+                desc.SampleDescription.Count = 1;
+                desc.Usage = ResourceUsage.Immutable;
+                desc.BindFlags = BindFlags.ShaderResource;
+                desc.CpuAccessFlags = CpuAccessFlags.None;
+                desc.OptionFlags = ResourceOptionFlags.None;
+
+                var data = new DataRectangle();
+                data.DataPointer = info.Scan0;
+                data.Pitch = info.Stride;
+
+                using (var texture = new Texture2D(mRenderDevice, desc, data))
+                {
+                    var view = new ShaderResourceViewDescription();
+                    view.Format = desc.Format;
+                    view.Dimension = SharpDX.Direct3D.ShaderResourceViewDimension.Texture2D;
+                    view.Texture2D.MipLevels = 1;
+                    view.Texture2D.MostDetailedMip = 0;
+                    return new ShaderResourceView(mRenderDevice, texture, view);
+                }
+            }
+            finally
+            {
+                bitmap.UnlockBits(info);
+            }
+        }
+
         public void Render()
         {
             if (mRenderContext is null) return;
@@ -261,10 +312,10 @@ namespace Match3
             var matrix = Matrix.OrthoOffCenterLH(0, ClientSize.Width, ClientSize.Height, 0, -1, +1);
 
             int j = 0;
-            mVertexBufferArray[j++] = new Vertex(new Vector4(100, 100, 0, 1), Color.Red);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(200, 100, 0, 1), Color.Green);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(100, 200, 0, 1), Color.Blue);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(200, 200, 0, 1), Color.Yellow);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(100, 100, 0, 1), new Vector2(0, 0), Color.White);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(200, 100, 0, 1), new Vector2(16.0f / 512.0f, 0), Color.White);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(100, 200, 0, 1), new Vector2(0, 16.0f / 512.0f), Color.White);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(200, 200, 0, 1), new Vector2(16.0f / 512.0f, 16.0f / 512.0f), Color.White);
 
             int i = 0;
             mIndexBufferArray[i++] = 0;
@@ -298,6 +349,7 @@ struct VS_DATA
 {
     float4 position : POSITION;
     float4 color : COLOR;
+    float2 texpos : TEXCOORD0;
 };
 
 ";
@@ -308,6 +360,7 @@ struct PS_DATA
 {
     float4 position : SV_POSITION;
     float4 color : COLOR;
+    float2 texpos : TEXCOORD0;
 };
 
 ";
@@ -322,6 +375,7 @@ PS_DATA VS(VS_DATA input)
 
     output.position = mul(camera, input.position);
     output.color = input.color;
+    output.texpos = input.texpos;
 
     return output;
 };
@@ -330,9 +384,12 @@ PS_DATA VS(VS_DATA input)
 
         public const string kPixelShader = kPixelStructure + @"
 
+Texture2D texture0;
+SamplerState sampler0;
+
 float4 PS(PS_DATA input) : SV_TARGET
 {
-    return input.color;
+    return texture0.Sample(sampler0, input.texpos) * input.color;
 }
 
 ";
