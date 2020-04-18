@@ -28,13 +28,22 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.display = new Match3.DisplayControl();
             this.SuspendLayout();
+            // 
+            // display
+            // 
+            this.display.Location = new System.Drawing.Point(62, 48);
+            this.display.Name = "display";
+            this.display.Size = new System.Drawing.Size(320, 320);
+            this.display.TabIndex = 0;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(524, 489);
+            this.Controls.Add(this.display);
             this.Name = "MainForm";
             this.Text = "Match 3";
             this.ResumeLayout(false);
@@ -42,6 +51,8 @@
         }
 
         #endregion
+
+        private DisplayControl display;
     }
 }
 

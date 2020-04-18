@@ -25,4 +25,8 @@ namespace Match3
             InitializeComponent();
         }
     }
+
+    public class DisplayControl : Control
+    {
+    }
 }
