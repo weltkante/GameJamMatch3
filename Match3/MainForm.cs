@@ -328,9 +328,11 @@ namespace Match3
 
             int i = 0, j = 0;
 
-            WriteQuad(ref i, ref j, 100, 100, 40, 40, 0, 0, 16, 16);
-            WriteQuad(ref i, ref j, 140, 100, 40, 40, 0, 0, 16, 16);
-            WriteQuad(ref i, ref j, 180, 100, 40, 40, 0, 0, 16, 16);
+            const int kSpriteSize = 24;
+
+            for (int iy = 0; iy < 10; iy++)
+                for (int ix = 0; ix < 10; ix++)
+                    WriteQuad(ref i, ref j, ix * kSpriteSize + 10, iy * kSpriteSize + 30, kSpriteSize, kSpriteSize, 0, 0, 16, 16);
 
             mRenderContext.OutputMerger.SetRenderTargets(mRenderTarget);
             mRenderContext.ClearRenderTargetView(mRenderTarget, Color.CornflowerBlue);
