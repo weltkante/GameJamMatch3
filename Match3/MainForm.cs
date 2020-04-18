@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SharpDX;
@@ -22,6 +23,7 @@ namespace Match3
     {
         private AudioGraph mAudioGraph;
         private AudioDeviceOutputNode mAudioOutput;
+        private CancellationTokenSource mMusicControl;
 
         [STAThread]
         static void Main()
@@ -50,6 +52,19 @@ namespace Match3
         {
             if (e.Button == MouseButtons.Left)
                 PlaySoundEffect("sound.wav", 0.2);
+
+            if (e.Button == MouseButtons.Right)
+            {
+                if (mMusicControl is null)
+                {
+                    mMusicControl = new CancellationTokenSource();
+                    PlayMusicLoop("music.mp3", 0.4, mMusicControl.Token);
+                }
+                else
+                {
+                    mMusicControl.Cancel();
+                }
+            }
         }
 
         internal static Stream LoadStream(string filename)
@@ -68,6 +83,22 @@ namespace Match3
             if (audioResult.Status != AudioDeviceNodeCreationStatus.Success) return;
             mAudioOutput = audioResult.DeviceOutputNode;
             mAudioGraph.Start();
+        }
+
+        private async void PlayMusicLoop(string filename, double gain = 1, CancellationToken ct = default)
+        {
+            var source = MediaSource.CreateFromStream(LoadStream(filename).AsRandomAccessStream(), "");
+            var result = await mAudioGraph.CreateMediaSourceAudioInputNodeAsync(source);
+            if (result.Status != MediaSourceAudioInputNodeCreationStatus.Success) return;
+            var node = result.Node;
+            node.LoopCount = null;
+            node.AddOutgoingConnection(mAudioOutput, gain);
+            ct.Register(() =>
+            {
+                node.Stop();
+                node.RemoveOutgoingConnection(mAudioOutput);
+                node.Dispose();
+            }, true);
         }
 
         private async void PlaySoundEffect(string filename, double gain = 1)
