@@ -4,15 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SharpDX;
+using Windows.ApplicationModel.Activation;
 
 namespace Match3
 {
     public sealed class GameState
     {
         private GameCell[] mCells;
+        private DateTime mStartTime;
         private int mWidth;
         private int mHeight;
         private int mHighlightCount;
+        private int mScore;
 
         public GameState(int width, int height)
         {
@@ -24,6 +27,8 @@ namespace Match3
         public int Width => mWidth;
         public int Height => mHeight;
         public int HighlightCount => mHighlightCount;
+        public int Score => mScore;
+        public DateTime StartTime => mStartTime;
 
         public ref GameCell this[int x, int y]
         {
@@ -35,8 +40,11 @@ namespace Match3
             }
         }
 
-        public void Randomize(int seed)
+        public void StartGame(int seed)
         {
+            mScore = 0;
+            mStartTime = DateTime.UtcNow;
+
             var rng = new Random(seed);
 
             for (int iy = 0; iy < mHeight; iy++)
@@ -102,10 +110,11 @@ namespace Match3
             }
         }
 
-        public void DiscardHighlights()
+        public void ResolveBlocks()
         {
             if (mHighlightCount > 0)
             {
+                mScore += GetScore(mHighlightCount);
                 mHighlightCount = 0;
 
                 for (int iy = 0; iy < mHeight; iy++)
@@ -120,6 +129,12 @@ namespace Match3
                     }
                 }
             }
+        }
+
+        private static int GetScore(int count)
+        {
+            Utils.BreakIf(count < 3);
+            return (int)(25 * Math.Pow(2, count - 3));
         }
     }
 

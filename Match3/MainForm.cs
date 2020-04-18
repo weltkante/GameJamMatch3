@@ -67,7 +67,7 @@ namespace Match3
                 }
 
                 PlaySoundEffect("sound.wav", 0.5);
-                display.Game.DiscardHighlights();
+                display.Game.ResolveBlocks();
             }
         }
 
@@ -89,7 +89,7 @@ namespace Match3
 
         private void StartGame(int seed)
         {
-            display.Game.Randomize(seed);
+            display.Game.StartGame(seed);
 
             mMusicControl?.Cancel();
             mMusicControl = new CancellationTokenSource();
@@ -402,9 +402,13 @@ namespace Match3
             mRenderContext.UpdateSubresource(mIndexBufferArray, mIndexBuffer);
             mRenderContext.DrawIndexed(i, 0, 0);
 
+            var time = (int)(DateTime.UtcNow - Game.StartTime).TotalSeconds;
+
             mDrawingContext.BeginDraw();
             mDrawingBrush.Color = Color.Black;
-            mDrawingContext.DrawText($"Hello World {DateTime.Now}", mTextFormat, new RawRectangleF(0, 0, float.PositiveInfinity, float.PositiveInfinity), mDrawingBrush);
+            mDrawingContext.DrawText($"Time: {time}\t\tScore: {Game.Score}", mTextFormat, new RawRectangleF(6, 3, float.PositiveInfinity, float.PositiveInfinity), mDrawingBrush);
+            mDrawingBrush.Color = Color.White;
+            mDrawingContext.DrawText($"Time: {time}\t\tScore: {Game.Score}", mTextFormat, new RawRectangleF(5, 2, float.PositiveInfinity, float.PositiveInfinity), mDrawingBrush);
             mDrawingContext.EndDraw();
 
             mGraphicsDisplay.Present(0, SharpDX.DXGI.PresentFlags.None);
@@ -468,13 +472,23 @@ float4 PS(PS_DATA input) : SV_TARGET
 
     public static class Utils
     {
+        public static void Break()
+        {
+            if (Debugger.IsAttached)
+                Debugger.Break();
+        }
+
+        public static void BreakIf(bool condition)
+        {
+            if (condition)
+                Break();
+        }
+
         public static void Assert(bool condition)
         {
             if (!condition)
             {
-                if (Debugger.IsAttached)
-                    Debugger.Break();
-
+                Break();
                 throw new InvalidOperationException();
             }
         }
