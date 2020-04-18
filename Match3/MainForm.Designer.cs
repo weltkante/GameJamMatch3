@@ -29,15 +29,27 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.renderTimer = new System.Windows.Forms.Timer(this.components);
-            this.display = new Match3.DisplayControl();
             this.btnNewGame = new System.Windows.Forms.Button();
+            this.display = new Match3.DisplayControl();
             this.SuspendLayout();
             // 
             // renderTimer
             // 
             this.renderTimer.Enabled = true;
             this.renderTimer.Tick += new System.EventHandler(this.renderTimer_Tick);
+            // 
+            // btnNewGame
+            // 
+            this.btnNewGame.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnNewGame.Location = new System.Drawing.Point(12, 398);
+            this.btnNewGame.Name = "btnNewGame";
+            this.btnNewGame.Size = new System.Drawing.Size(75, 25);
+            this.btnNewGame.TabIndex = 1;
+            this.btnNewGame.Text = "Neu";
+            this.btnNewGame.UseVisualStyleBackColor = true;
+            this.btnNewGame.Click += new System.EventHandler(this.btnNewGame_Click);
             // 
             // display
             // 
@@ -51,25 +63,17 @@
             this.display.MouseLeave += new System.EventHandler(this.display_MouseLeave);
             this.display.MouseMove += new System.Windows.Forms.MouseEventHandler(this.display_MouseMove);
             // 
-            // btnNewGame
-            // 
-            this.btnNewGame.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnNewGame.Location = new System.Drawing.Point(12, 452);
-            this.btnNewGame.Name = "btnNewGame";
-            this.btnNewGame.Size = new System.Drawing.Size(75, 25);
-            this.btnNewGame.TabIndex = 1;
-            this.btnNewGame.Text = "Neu";
-            this.btnNewGame.UseVisualStyleBackColor = true;
-            this.btnNewGame.Click += new System.EventHandler(this.btnNewGame_Click);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(424, 489);
+            this.ClientSize = new System.Drawing.Size(424, 435);
             this.Controls.Add(this.btnNewGame);
             this.Controls.Add(this.display);
             this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "Match 3";
             this.Load += new System.EventHandler(this.MainForm_Load);

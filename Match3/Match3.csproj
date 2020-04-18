@@ -34,6 +34,9 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -73,6 +76,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -115,7 +119,8 @@
     <EmbeddedResource Include="Resources\sound.wav" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\info.txt" />
+    <None Include="Resources\icon.ico" />
+    <None Include="Resources\info.txt" />
     <EmbeddedResource Include="Resources\reject.wav" />
     <EmbeddedResource Include="Resources\texture.png" />
   </ItemGroup>
