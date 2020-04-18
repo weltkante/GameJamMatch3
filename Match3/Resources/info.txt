@@ -2,6 +2,8 @@
 - https://www.leshylabs.com/apps/sfMaker/
 - preset "Pick Up 5"
 - remove double note from song field, "O5D G A" remains
+reject.wav
+- preset "Chirp 3"
 
 music.mp3
 - https://opengameart.org/content/crystal-cave-song18

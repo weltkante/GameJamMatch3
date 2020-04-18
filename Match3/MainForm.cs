@@ -57,7 +57,9 @@ namespace Match3
         private void display_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
-                PlaySoundEffect("sound.wav", 0.2);
+                PlaySoundEffect("sound.wav", 0.5);
+            if (e.Button == MouseButtons.Right)
+                PlaySoundEffect("reject.wav", 0.5);
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)
