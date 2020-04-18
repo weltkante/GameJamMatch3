@@ -28,7 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.display = new Match3.DisplayControl();
+            this.renderTimer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // display
@@ -37,6 +39,11 @@
             this.display.Name = "display";
             this.display.Size = new System.Drawing.Size(320, 320);
             this.display.TabIndex = 0;
+            // 
+            // renderTimer
+            // 
+            this.renderTimer.Enabled = true;
+            this.renderTimer.Tick += new System.EventHandler(this.renderTimer_Tick);
             // 
             // MainForm
             // 
@@ -53,6 +60,7 @@
         #endregion
 
         private DisplayControl display;
+        private System.Windows.Forms.Timer renderTimer;
     }
 }
 
