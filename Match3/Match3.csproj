@@ -109,5 +109,12 @@
       <Version>4.2.0</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\music.mp3" />
+    <EmbeddedResource Include="Resources\sound.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\info.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
