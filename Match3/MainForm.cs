@@ -38,6 +38,9 @@ namespace Match3
         public MainForm()
         {
             InitializeComponent();
+
+            display.Game = new GameState(10, 10);
+            display.Game.Randomize(0);
         }
 
         private void renderTimer_Tick(object sender, EventArgs e)
@@ -67,6 +70,11 @@ namespace Match3
                     mMusicControl.Cancel();
                 }
             }
+        }
+
+        private void btnNewGame_Click(object sender, EventArgs e)
+        {
+            display.Game.Randomize((int)DateTime.UtcNow.Ticks);
         }
 
         internal static Stream LoadStream(string filename)
@@ -167,6 +175,8 @@ namespace Match3
 
         private Vertex[] mVertexBufferArray;
         private int[] mIndexBufferArray;
+
+        public GameState Game { get; set; }
 
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -337,12 +347,14 @@ namespace Match3
             var matrix = Matrix.OrthoOffCenterLH(0, ClientSize.Width, ClientSize.Height, 0, -1, +1);
 
             int i = 0, j = 0;
-
             const int kSpriteSize = 32;
 
-            for (int iy = 0; iy < 10; iy++)
-                for (int ix = 0; ix < 10; ix++)
-                    WriteQuad(ref i, ref j, ix * kSpriteSize + 10, iy * kSpriteSize + 30, kSpriteSize, kSpriteSize, 0, 0, 16, 16);
+            if (Game != null)
+            {
+                for (int iy = 0; iy < Game.Height; iy++)
+                    for (int ix = 0; ix < Game.Width; ix++)
+                        WriteQuad(ref i, ref j, ix * kSpriteSize + 10, iy * kSpriteSize + 30, kSpriteSize, kSpriteSize, 0, 0, 16, 16);
+            }
 
             mRenderContext.OutputMerger.SetRenderTargets(mRenderTarget);
             mRenderContext.ClearRenderTargetView(mRenderTarget, Color.CornflowerBlue);
@@ -416,6 +428,17 @@ float4 PS(PS_DATA input) : SV_TARGET
 
     public static class Utils
     {
+        public static void Assert(bool condition)
+        {
+            if (!condition)
+            {
+                if (Debugger.IsAttached)
+                    Debugger.Break();
+
+                throw new InvalidOperationException();
+            }
+        }
+
         public static void Dispose<T>(ref T field) where T : IDisposable
         {
             field?.Dispose();
