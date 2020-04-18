@@ -29,22 +29,22 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.display = new Match3.DisplayControl();
             this.renderTimer = new System.Windows.Forms.Timer(this.components);
+            this.display = new Match3.DisplayControl();
             this.SuspendLayout();
-            // 
-            // display
-            // 
-            this.display.Location = new System.Drawing.Point(62, 48);
-            this.display.Name = "display";
-            this.display.Size = new System.Drawing.Size(320, 320);
-            this.display.TabIndex = 0;
-            this.display.MouseClick += new System.Windows.Forms.MouseEventHandler(this.display_MouseClick);
             // 
             // renderTimer
             // 
             this.renderTimer.Enabled = true;
             this.renderTimer.Tick += new System.EventHandler(this.renderTimer_Tick);
+            // 
+            // display
+            // 
+            this.display.Location = new System.Drawing.Point(62, 48);
+            this.display.Name = "display";
+            this.display.Size = new System.Drawing.Size(396, 374);
+            this.display.TabIndex = 0;
+            this.display.MouseClick += new System.Windows.Forms.MouseEventHandler(this.display_MouseClick);
             // 
             // MainForm
             // 

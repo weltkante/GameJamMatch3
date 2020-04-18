@@ -222,7 +222,9 @@ namespace Match3
 
             var ps = SharpDX.D3DCompiler.ShaderBytecode.Compile(ShaderText.kPixelShader, "PS", "ps_4_0");
             mRenderContext.PixelShader.Set(new PixelShader(mRenderDevice, ps));
-            mRenderContext.PixelShader.SetSampler(0, new SamplerState(mRenderDevice, SamplerStateDescription.Default()));
+            var samplerDesc = SamplerStateDescription.Default();
+            samplerDesc.Filter = Filter.MinMagMipPoint;
+            mRenderContext.PixelShader.SetSampler(0, new SamplerState(mRenderDevice, samplerDesc));
             mRenderContext.PixelShader.SetShaderResource(0, LoadTexture("texture.png"));
 
             mRenderContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
@@ -236,6 +238,14 @@ namespace Match3
             });
 
             mRenderContext.Rasterizer.SetViewport(0, 0, ClientSize.Width, ClientSize.Height);
+            var blendDesc = BlendStateDescription1.Default();
+            blendDesc.IndependentBlendEnable = true;
+            blendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.SourceAlpha;
+            blendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.InverseSourceAlpha;
+            blendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            blendDesc.RenderTarget[0].IsBlendEnabled = true;
+            mRenderContext.OutputMerger.BlendState = new BlendState1(mRenderDevice, blendDesc);
         }
 
         protected override void OnHandleDestroyed(EventArgs e)
@@ -328,7 +338,7 @@ namespace Match3
 
             int i = 0, j = 0;
 
-            const int kSpriteSize = 24;
+            const int kSpriteSize = 32;
 
             for (int iy = 0; iy < 10; iy++)
                 for (int ix = 0; ix < 10; ix++)
