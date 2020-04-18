@@ -7,6 +7,7 @@ using SharpDX;
 using SharpDX.Direct2D1;
 using Windows.ApplicationModel.Activation;
 using Windows.Media.Miracast;
+using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 
 namespace Match3
@@ -21,7 +22,7 @@ namespace Match3
         private int mHighlightCount;
         private int mScore;
         private int mAnimationLength;
-        private bool mGameOver;
+        private DateTime? mGameOver;
 
         public GameState(int width, int height)
         {
@@ -38,7 +39,8 @@ namespace Match3
         public DateTime StartTime => mStartTime;
         public bool IsInAnimation => mAnimationLength > 0;
         public int AnimationLength => mAnimationLength;
-        public bool IsGameOver => mGameOver;
+        public bool IsGameOver => mGameOver.HasValue;
+        public DateTime? GameOverTime => mGameOver;
 
         public bool IsValid(int x, int y) => 0 <= x && x < mWidth && 0 <= y && y < mHeight;
 
@@ -56,7 +58,7 @@ namespace Match3
             mScore = 0;
             mStartTime = DateTime.UtcNow;
             mAnimationLength = 0;
-            mGameOver = false;
+            mGameOver = null;
 
             var rng = new Random(seed);
 
@@ -176,7 +178,7 @@ namespace Match3
             }
 
             if (CheckGameOver())
-                mGameOver = true;
+                mGameOver = DateTime.UtcNow;
 
             return true;
         }

@@ -442,7 +442,7 @@ namespace Match3
             mRenderContext.UpdateSubresource(mIndexBufferArray, mIndexBuffer);
             mRenderContext.DrawIndexed(i, 0, 0);
 
-            var time = (int)(DateTime.UtcNow - Game.StartTime).TotalSeconds;
+            var time = (int)((Game.GameOverTime ?? DateTime.UtcNow) - Game.StartTime).TotalSeconds;
 
             mDrawingContext.BeginDraw();
             mDrawingBrush.Color = Color.Black;
