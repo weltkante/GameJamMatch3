@@ -40,7 +40,6 @@ namespace Match3
             InitializeComponent();
 
             display.Game = new GameState(10, 10);
-            display.Game.Randomize(0);
         }
 
         private void renderTimer_Tick(object sender, EventArgs e)
@@ -48,28 +47,17 @@ namespace Match3
             display.Render();
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
+        private async void MainForm_Load(object sender, EventArgs e)
         {
-            InitAudioEngine();
+            await InitAudioEngine();
+
+            StartGame(0);
         }
 
         private void display_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
                 PlaySoundEffect("sound.wav", 0.2);
-
-            if (e.Button == MouseButtons.Right)
-            {
-                if (mMusicControl is null)
-                {
-                    mMusicControl = new CancellationTokenSource();
-                    PlayMusicLoop("music.mp3", 0.4, mMusicControl.Token);
-                }
-                else
-                {
-                    mMusicControl.Cancel();
-                }
-            }
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)
@@ -85,7 +73,16 @@ namespace Match3
 
         private void btnNewGame_Click(object sender, EventArgs e)
         {
-            display.Game.Randomize((int)DateTime.UtcNow.Ticks);
+            StartGame((int)DateTime.UtcNow.Ticks);
+        }
+
+        private void StartGame(int seed)
+        {
+            display.Game.Randomize(seed);
+
+            mMusicControl?.Cancel();
+            mMusicControl = new CancellationTokenSource();
+            PlayMusicLoop("music.mp3", 0.4, mMusicControl.Token);
         }
 
         internal static Stream LoadStream(string filename)
@@ -95,7 +92,7 @@ namespace Match3
 
         #region Audio
 
-        private async void InitAudioEngine()
+        private async Task InitAudioEngine()
         {
             var graphResult = await AudioGraph.CreateAsync(new AudioGraphSettings(AudioRenderCategory.Media));
             if (graphResult.Status != AudioGraphCreationStatus.Success) return;
