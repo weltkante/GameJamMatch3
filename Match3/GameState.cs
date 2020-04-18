@@ -69,20 +69,20 @@ namespace Match3
             ClearHighlight();
 
             mHasHighlight = true;
-            this[x, y].Highlight = true;
 
+            var value = this[x, y].Value;
             var visited = new HashSet<(int, int)>(mWidth * mHeight);
             var pending = new Stack<(int, int)>(mWidth * mHeight);
 
             visited.Add((x, y));
-            Expand(x, y);
+            pending.Push((x, y));
 
             while (pending.Count > 0)
             {
                 (x, y) = pending.Pop();
+                this[x, y].Highlight = true;
                 Expand(x, y);
             }
-
 
             void Expand(int ix, int iy)
             {
@@ -94,7 +94,7 @@ namespace Match3
 
             void Append(int ix, int iy)
             {
-                if (0 <= ix && ix < mWidth && 0 <= iy && iy < mHeight && visited.Add((ix, iy)))
+                if (0 <= ix && ix < mWidth && 0 <= iy && iy < mHeight && visited.Add((ix, iy)) && this[ix, iy].Value == value)
                     pending.Push((ix, iy));
             }
         }
