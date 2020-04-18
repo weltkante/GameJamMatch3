@@ -58,18 +58,14 @@ namespace Match3
 
         private void display_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left && !display.Game.IsInAnimation)
             {
                 var (x, y) = display.MouseToGrid(e.X, e.Y);
                 ref var cell = ref display.Game[x, y];
-                if (cell.IsEmpty || display.Game.HighlightCount < 3)
-                {
+                if (!cell.IsEmpty && display.Game.HighlightCount >= 3 && display.ResolveBlocks())
+                    PlaySoundEffect("sound.wav", 0.5);
+                else
                     PlaySoundEffect("reject.wav", 0.5);
-                    return;
-                }
-
-                PlaySoundEffect("sound.wav", 0.5);
-                display.Game.ResolveBlocks();
             }
         }
 
@@ -206,6 +202,7 @@ namespace Match3
         private int[] mIndexBufferArray;
 
         public GameState Game { get; set; }
+        private DateTime mAnimationStart;
 
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -353,7 +350,7 @@ namespace Match3
             }
         }
 
-        private void WriteQuad(ref int i, ref int j, int x, int y, int w, int h, int sx, int sy, int sw, int sh, Color color)
+        private void WriteQuad(ref int i, ref int j, int x, float y, int w, int h, int sx, int sy, int sw, int sh, Color color)
         {
             mIndexBufferArray[i++] = j + 0;
             mIndexBufferArray[i++] = j + 1;
@@ -370,8 +367,8 @@ namespace Match3
 
         private const int kSpriteSize = 32;
         private const int kMargin = 2;
-        private const int kOffsetX = 10;
         private const int kOffsetY = 30;
+        private int kOffsetX => (ClientSize.Width - Game.Width * (kSpriteSize + kMargin) + kMargin) / 2;
 
         public (int, int) MouseToGrid(int x, int y)
         {
@@ -388,7 +385,19 @@ namespace Match3
 
             if (Game != null)
             {
-                bool showHighlight = (Game.HighlightCount >= 3);
+                float animationProgress = 0;
+                if (Game.IsInAnimation)
+                {
+                    const float kBlockDuration = 0.2f;
+                    animationProgress = (float)(DateTime.UtcNow - mAnimationStart).TotalSeconds / kBlockDuration;
+                    if (animationProgress > Game.AnimationLength)
+                    {
+                        animationProgress = 0;
+                        Game.ClearAnimation();
+                    }
+                }
+
+                bool showHighlight = (Game.HighlightCount >= 3) && !Game.IsInAnimation;
 
                 for (int iy = 0; iy < Game.Height; iy++)
                 {
@@ -399,7 +408,17 @@ namespace Match3
                         if (value == 0)
                             continue;
 
-                        WriteQuad(ref i, ref j, ix * (kSpriteSize + kMargin) + kOffsetX, iy * (kSpriteSize + kMargin) + kOffsetY, kSpriteSize, kSpriteSize, (value - 1) * 16, 0, 16, 16, showHighlight && cell.Highlight ? new Color(1.0f, 1.0f, 1.0f, 0.7f) : Color.Transparent);
+                        float cellAnimationFactor = 0;
+                        if (cell.DropCount > 0)
+                            cellAnimationFactor = Math.Max(0, cell.DropCount - animationProgress);
+
+                        WriteQuad(ref i, ref j,
+                            ix * (kSpriteSize + kMargin) + kOffsetX,
+                            iy * (kSpriteSize + kMargin) + kOffsetY - cellAnimationFactor * (kSpriteSize + kMargin),
+                            kSpriteSize,
+                            kSpriteSize,
+                            (value - 1) * 16, 0, 16, 16,
+                            showHighlight && cell.Highlight ? new Color(1.0f, 1.0f, 1.0f, 0.7f) : Color.Transparent);
                     }
                 }
             }
@@ -421,6 +440,15 @@ namespace Match3
             mDrawingContext.EndDraw();
 
             mGraphicsDisplay.Present(0, SharpDX.DXGI.PresentFlags.None);
+        }
+
+        public bool ResolveBlocks()
+        {
+            if (!Game.ResolveBlocks())
+                return false;
+
+            mAnimationStart = DateTime.UtcNow;
+            return true;
         }
     }
 

@@ -16,6 +16,7 @@ namespace Match3
         private int mHeight;
         private int mHighlightCount;
         private int mScore;
+        private int mAnimationLength;
 
         public GameState(int width, int height)
         {
@@ -29,6 +30,8 @@ namespace Match3
         public int HighlightCount => mHighlightCount;
         public int Score => mScore;
         public DateTime StartTime => mStartTime;
+        public bool IsInAnimation => mAnimationLength > 0;
+        public int AnimationLength => mAnimationLength;
 
         public ref GameCell this[int x, int y]
         {
@@ -44,12 +47,29 @@ namespace Match3
         {
             mScore = 0;
             mStartTime = DateTime.UtcNow;
+            mAnimationLength = 0;
 
             var rng = new Random(seed);
 
             for (int iy = 0; iy < mHeight; iy++)
+            {
                 for (int ix = 0; ix < mWidth; ix++)
-                    this[ix, iy].Value = (byte)(rng.Next(4) + 1);
+                {
+                    this[ix, iy] = new GameCell((byte)(rng.Next(4) + 1));
+                }
+            }
+        }
+
+        public void ClearAnimation()
+        {
+            if (mAnimationLength > 0)
+            {
+                mAnimationLength = 0;
+
+                for (int iy = 0; iy < mHeight; iy++)
+                    for (int ix = 0; ix < mWidth; ix++)
+                        this[ix, iy].DropCount = 0;
+            }
         }
 
         public void ClearHighlight()
@@ -110,25 +130,43 @@ namespace Match3
             }
         }
 
-        public void ResolveBlocks()
+        public bool ResolveBlocks()
         {
-            if (mHighlightCount > 0)
-            {
-                mScore += GetScore(mHighlightCount);
-                mHighlightCount = 0;
+            if (mHighlightCount == 0 || IsInAnimation)
+                return false;
 
-                for (int iy = 0; iy < mHeight; iy++)
+            mScore += GetScore(mHighlightCount);
+            mHighlightCount = 0;
+
+            for (int iy = 0; iy < mHeight; iy++)
+                for (int ix = 0; ix < mWidth; ix++)
+                    if (this[ix, iy].Highlight)
+                        this[ix, iy].Clear();
+
+            for (int ix = 0; ix < mWidth; ix++)
+            {
+                byte dropCount = 0;
+
+                for (int iy = mHeight - 1; iy >= 0; iy--)
                 {
-                    for (int ix = 0; ix < mWidth; ix++)
+                    if (this[ix, iy].IsEmpty)
                     {
-                        if (this[ix, iy].Highlight)
-                        {
-                            this[ix, iy].Highlight = false;
-                            this[ix, iy].Value = 0;
-                        }
+                        dropCount++;
+                    }
+                    else if (dropCount > 0)
+                    {
+                        ref var src = ref this[ix, iy];
+                        ref var dst = ref this[ix, iy + dropCount];
+
+                        dst = src;
+                        dst.DropCount = dropCount;
+                        src.Clear();
+                        mAnimationLength = Math.Max(mAnimationLength, dropCount);
                     }
                 }
             }
+
+            return true;
         }
 
         private static int GetScore(int count)
@@ -142,7 +180,17 @@ namespace Match3
     {
         public byte Value;
         public byte Flags;
+        public byte DropCount;
+
+        public GameCell(byte value)
+        {
+            Value = value;
+            Flags = 0;
+            DropCount = 0;
+        }
+
         public bool IsEmpty => Value == 0;
+
         public bool Highlight
         {
             get => (Flags & 1) != 0;
@@ -153,6 +201,13 @@ namespace Match3
                 else
                     Flags &= unchecked((byte)(~1));
             }
+        }
+
+        public void Clear()
+        {
+            Value = 0;
+            Flags = 0;
+            DropCount = 0;
         }
     }
 }
