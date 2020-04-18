@@ -57,9 +57,17 @@ namespace Match3
         private void display_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
+            {
+                var (x, y) = display.MouseToGrid(e.X, e.Y);
+                ref var cell = ref display.Game[x, y];
+                if (cell.IsEmpty || display.Game.HighlightCount < 3)
+                {
+                    PlaySoundEffect("reject.wav", 0.5);
+                    return;
+                }
+
                 PlaySoundEffect("sound.wav", 0.5);
-            if (e.Button == MouseButtons.Right)
-                PlaySoundEffect("reject.wav", 0.5);
+            }
         }
 
         private void display_MouseMove(object sender, MouseEventArgs e)
