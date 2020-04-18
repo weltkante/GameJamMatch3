@@ -141,6 +141,58 @@ namespace Match3
             }
         }
 
+        public bool FillBlocks(int count)
+        {
+            if (IsInAnimation || IsGameOver)
+                return false;
+
+            var rng = new Random();
+
+            bool droppedAnything = false;
+            bool checkedForEmptyFields = false;
+
+            int[] maxHeight = new int[mWidth];
+
+            while (count > 0)
+            {
+                var ix = rng.Next(mWidth);
+                if (this[ix, 0].IsEmpty)
+                {
+                    byte iy = 0;
+                    while (iy + 1 < mHeight && this[ix, iy + 1].IsEmpty)
+                        iy++;
+
+                    maxHeight[ix] = Math.Max(maxHeight[ix], iy);
+                    this[ix, iy] = new GameCell((byte)(rng.Next(4) + 1));
+                    this[ix, iy].DropCount = (byte)maxHeight[ix];
+                    mAnimationLength = Math.Max(mAnimationLength, maxHeight[ix]);
+                    count--;
+                    checkedForEmptyFields = false;
+                    droppedAnything = true;
+                }
+                else
+                {
+                    // check if there are any empty fields left
+                    if (!checkedForEmptyFields)
+                    {
+                        for (ix = 0; ix < mWidth; ix++)
+                        {
+                            if (this[ix, 0].IsEmpty)
+                            {
+                                checkedForEmptyFields = true;
+                                break;
+                            }
+                        }
+
+                        if (!checkedForEmptyFields)
+                            break;
+                    }
+                }
+            }
+
+            return droppedAnything;
+        }
+
         public bool ResolveBlocks()
         {
             if (mHighlightCount == 0 || IsInAnimation || IsGameOver)
