@@ -4,18 +4,25 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SharpDX;
 using SharpDX.Direct3D11;
+using Windows.Media.Audio;
+using Windows.Media.Core;
+using Windows.Media.Render;
 using Color = SharpDX.Color;
 
 namespace Match3
 {
     public partial class MainForm : Form
     {
+        private AudioGraph mAudioGraph;
+        private AudioDeviceOutputNode mAudioOutput;
+
         [STAThread]
         static void Main()
         {
@@ -33,6 +40,60 @@ namespace Match3
         {
             display.Render();
         }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            InitAudioEngine();
+        }
+
+        private void display_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+                PlaySoundEffect("sound.wav", 0.2);
+        }
+
+        internal static Stream LoadStream(string filename)
+        {
+            return typeof(MainForm).Assembly.GetManifestResourceStream(typeof(MainForm), "Resources." + filename) ?? throw new FileNotFoundException();
+        }
+
+        #region Audio
+
+        private async void InitAudioEngine()
+        {
+            var graphResult = await AudioGraph.CreateAsync(new AudioGraphSettings(AudioRenderCategory.Media));
+            if (graphResult.Status != AudioGraphCreationStatus.Success) return;
+            mAudioGraph = graphResult.Graph;
+            var audioResult = await mAudioGraph.CreateDeviceOutputNodeAsync();
+            if (audioResult.Status != AudioDeviceNodeCreationStatus.Success) return;
+            mAudioOutput = audioResult.DeviceOutputNode;
+            mAudioGraph.Start();
+        }
+
+        private async void PlaySoundEffect(string filename, double gain = 1)
+        {
+            var source = MediaSource.CreateFromStream(LoadStream(filename).AsRandomAccessStream(), "");
+            var result = await mAudioGraph.CreateMediaSourceAudioInputNodeAsync(source);
+            if (result.Status != MediaSourceAudioInputNodeCreationStatus.Success) return;
+            var fileNode = result.Node;
+            fileNode.MediaSourceCompleted += HandleSoundEffectCompleted;
+            fileNode.AddOutgoingConnection(mAudioOutput, gain);
+        }
+
+        private void HandleSoundEffectCompleted(MediaSourceAudioInputNode sender, object args)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(() => HandleSoundEffectCompleted(sender, args)));
+                return;
+            }
+
+            sender.RemoveOutgoingConnection(mAudioOutput);
+            sender.MediaSourceCompleted -= HandleSoundEffectCompleted;
+            sender.Dispose();
+        }
+
+        #endregion
     }
 
     public class DisplayControl : Control

@@ -39,6 +39,7 @@
             this.display.Name = "display";
             this.display.Size = new System.Drawing.Size(320, 320);
             this.display.TabIndex = 0;
+            this.display.MouseClick += new System.Windows.Forms.MouseEventHandler(this.display_MouseClick);
             // 
             // renderTimer
             // 
@@ -53,6 +54,7 @@
             this.Controls.Add(this.display);
             this.Name = "MainForm";
             this.Text = "Match 3";
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.ResumeLayout(false);
 
         }
