@@ -72,6 +72,17 @@ namespace Match3
             }
         }
 
+        private void display_MouseMove(object sender, MouseEventArgs e)
+        {
+            var (x, y) = display.MouseToGrid(e.X, e.Y);
+            display.Game.Highlight(x, y);
+        }
+
+        private void display_MouseLeave(object sender, EventArgs e)
+        {
+            display.Game.ClearHighlight();
+        }
+
         private void btnNewGame_Click(object sender, EventArgs e)
         {
             display.Game.Randomize((int)DateTime.UtcNow.Ticks);
@@ -325,7 +336,7 @@ namespace Match3
             }
         }
 
-        private void WriteQuad(ref int i, ref int j, int x, int y, int w, int h, int sx, int sy, int sw, int sh)
+        private void WriteQuad(ref int i, ref int j, int x, int y, int w, int h, int sx, int sy, int sw, int sh, Color color)
         {
             mIndexBufferArray[i++] = j + 0;
             mIndexBufferArray[i++] = j + 1;
@@ -334,10 +345,20 @@ namespace Match3
             mIndexBufferArray[i++] = j + 1;
             mIndexBufferArray[i++] = j + 3;
 
-            mVertexBufferArray[j++] = new Vertex(new Vector4(x, y, 0, 1), new Vector2(sx / 512.0f, sy / 512.0f), Color.White);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(x + w, y, 0, 1), new Vector2((sx + sw) / 512.0f, sy / 512.0f), Color.White);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(x, y + h, 0, 1), new Vector2(sx / 512.0f, (sy + sh) / 512.0f), Color.White);
-            mVertexBufferArray[j++] = new Vertex(new Vector4(x + w, y + h, 0, 1), new Vector2((sx + sw) / 512.0f, (sy + sh) / 512.0f), Color.White);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(x, y, 0, 1), new Vector2(sx / 512.0f, sy / 512.0f), color);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(x + w, y, 0, 1), new Vector2((sx + sw) / 512.0f, sy / 512.0f), color);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(x, y + h, 0, 1), new Vector2(sx / 512.0f, (sy + sh) / 512.0f), color);
+            mVertexBufferArray[j++] = new Vertex(new Vector4(x + w, y + h, 0, 1), new Vector2((sx + sw) / 512.0f, (sy + sh) / 512.0f), color);
+        }
+
+        private const int kSpriteSize = 32;
+        private const int kMargin = 2;
+        private const int kOffsetX = 10;
+        private const int kOffsetY = 30;
+
+        public (int, int) MouseToGrid(int x, int y)
+        {
+            return ((x - kOffsetX) / (kSpriteSize + kMargin), (y - kOffsetY) / (kSpriteSize + kMargin));
         }
 
         public void Render()
@@ -347,7 +368,6 @@ namespace Match3
             var matrix = Matrix.OrthoOffCenterLH(0, ClientSize.Width, ClientSize.Height, 0, -1, +1);
 
             int i = 0, j = 0;
-            const int kSpriteSize = 32;
 
             if (Game != null)
             {
@@ -355,13 +375,12 @@ namespace Match3
                 {
                     for (int ix = 0; ix < Game.Width; ix++)
                     {
-                        switch (Game[ix, iy].Value)
-                        {
-                            case 1: WriteQuad(ref i, ref j, ix * (kSpriteSize + 2) + 10, iy * (kSpriteSize + 2) + 30, kSpriteSize, kSpriteSize, 0, 0, 16, 16); break;
-                            case 2: WriteQuad(ref i, ref j, ix * (kSpriteSize + 2) + 10, iy * (kSpriteSize + 2) + 30, kSpriteSize, kSpriteSize, 16, 0, 16, 16); break;
-                            case 3: WriteQuad(ref i, ref j, ix * (kSpriteSize + 2) + 10, iy * (kSpriteSize + 2) + 30, kSpriteSize, kSpriteSize, 0, 16, 16, 16); break;
-                            case 4: WriteQuad(ref i, ref j, ix * (kSpriteSize + 2) + 10, iy * (kSpriteSize + 2) + 30, kSpriteSize, kSpriteSize, 16, 16, 16, 16); break;
-                        }
+                        ref var cell = ref Game[ix, iy];
+                        var value = cell.Value;
+                        if (value == 0)
+                            continue;
+
+                        WriteQuad(ref i, ref j, ix * (kSpriteSize + kMargin) + kOffsetX, iy * (kSpriteSize + kMargin) + kOffsetY, kSpriteSize, kSpriteSize, (value - 1) * 16, 0, 16, 16, cell.Highlight ? new Color(1.0f, 1.0f, 1.0f, 0.7f) : Color.Transparent);
                     }
                 }
             }
@@ -430,7 +449,8 @@ SamplerState sampler0;
 
 float4 PS(PS_DATA input) : SV_TARGET
 {
-    return texture0.Sample(sampler0, input.texpos) * input.color;
+    float4 texcol = texture0.Sample(sampler0, input.texpos);
+    return float4(texcol.rgb * (1 - input.color.a) + input.color.rgb * input.color.a, texcol.a);
 }
 
 ";

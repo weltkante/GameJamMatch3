@@ -42,11 +42,14 @@
             // display
             // 
             this.display.BackColor = System.Drawing.Color.CornflowerBlue;
+            this.display.Game = null;
             this.display.Location = new System.Drawing.Point(12, 12);
             this.display.Name = "display";
             this.display.Size = new System.Drawing.Size(400, 380);
             this.display.TabIndex = 0;
             this.display.MouseClick += new System.Windows.Forms.MouseEventHandler(this.display_MouseClick);
+            this.display.MouseLeave += new System.EventHandler(this.display_MouseLeave);
+            this.display.MouseMove += new System.Windows.Forms.MouseEventHandler(this.display_MouseMove);
             // 
             // btnNewGame
             // 

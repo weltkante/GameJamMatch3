@@ -12,6 +12,7 @@ namespace Match3
         private GameCell[] mCells;
         private int mWidth;
         private int mHeight;
+        private bool mHasHighlight;
 
         public GameState(int width, int height)
         {
@@ -44,18 +45,30 @@ namespace Match3
 
         public void ClearHighlight()
         {
-            for (int iy = 0; iy < mHeight; iy++)
-                for (int ix = 0; ix < mWidth; ix++)
-                    this[ix, iy].Highlight = false;
+            if (mHasHighlight)
+            {
+                mHasHighlight = false;
+
+                for (int iy = 0; iy < mHeight; iy++)
+                    for (int ix = 0; ix < mWidth; ix++)
+                        this[ix, iy].Highlight = false;
+            }
         }
 
         public void Highlight(int x, int y)
         {
-            Utils.Assert(0 <= x && x < mWidth);
-            Utils.Assert(0 <= y && y < mHeight);
+            if (!(0 <= x && x < mWidth && 0 <= y && y < mHeight))
+            {
+                ClearHighlight();
+                return;
+            }
+
+            if (this[x, y].Highlight)
+                return; // same highlight, nothing to do
 
             ClearHighlight();
 
+            mHasHighlight = true;
             this[x, y].Highlight = true;
 
             var visited = new HashSet<(int, int)>(mWidth * mHeight);
