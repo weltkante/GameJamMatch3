@@ -101,6 +101,26 @@ namespace Match3
                     pending.Push((ix, iy));
             }
         }
+
+        public void DiscardHighlights()
+        {
+            if (mHighlightCount > 0)
+            {
+                mHighlightCount = 0;
+
+                for (int iy = 0; iy < mHeight; iy++)
+                {
+                    for (int ix = 0; ix < mWidth; ix++)
+                    {
+                        if (this[ix, iy].Highlight)
+                        {
+                            this[ix, iy].Highlight = false;
+                            this[ix, iy].Value = 0;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public struct GameCell

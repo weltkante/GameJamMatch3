@@ -67,6 +67,7 @@ namespace Match3
                 }
 
                 PlaySoundEffect("sound.wav", 0.5);
+                display.Game.DiscardHighlights();
             }
         }
 
